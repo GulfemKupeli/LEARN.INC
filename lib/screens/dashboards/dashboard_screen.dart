@@ -56,11 +56,11 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
   void _configureRoleBasedContent(bool isDayMode){
     if(widget.role == 'teachers'){
       _pages = [
-          MainPage(animation: _animation,),
-          ManageClassesScreen(),
-          ChatScreen(isDayMode: isDayMode),
-          AssignmentsScreen(),
-          QuizzesScreen(isDayMode: isDayMode),
+        MainPage(animation: _animation,),
+        ManageClassesScreen(),
+        ChatScreen(isDayMode: isDayMode),
+        AssignmentsScreen(),
+        QuizzesScreen(isDayMode: isDayMode),
       ];
       _icons = [
         Icon(Icons.home, size: 30, color: isDayMode ? Colors.black : Colors.white),
@@ -87,20 +87,20 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
         Icon(Icons.quiz, size: 30, color: isDayMode ? Colors.black : Colors.white),
       ];
     } else{
-        _pages = [
-          MainPage(animation: _animation),
-          FlashyScreen(isDayMode: isDayMode),
-          ChatScreen(isDayMode: isDayMode),
-          LearnScreen(isDayMode: isDayMode),
-          QuizzesScreen(isDayMode: isDayMode),
-        ];
-        _icons = [
-          Icon(Icons.home, size: 30, color: isDayMode ? Colors.black : Colors.white),
-          Icon(Icons.flash_on, size: 30, color: isDayMode ? Colors.black : Colors.white),
-          Icon(Icons.chat, size: 30, color: isDayMode ? Colors.black : Colors.white),
-          Icon(Icons.lightbulb, size: 30, color: isDayMode ? Colors.black : Colors.white),
-          Icon(Icons.quiz, size: 30, color: isDayMode ? Colors.black : Colors.white),
-        ];
+      _pages = [
+        MainPage(animation: _animation),
+        FlashyScreen(isDayMode: isDayMode),
+        ChatScreen(isDayMode: isDayMode),
+        LearnScreen(isDayMode: isDayMode),
+        QuizzesScreen(isDayMode: isDayMode),
+      ];
+      _icons = [
+        Icon(Icons.home, size: 30, color: isDayMode ? Colors.black : Colors.white),
+        Icon(Icons.flash_on, size: 30, color: isDayMode ? Colors.black : Colors.white),
+        Icon(Icons.chat, size: 30, color: isDayMode ? Colors.black : Colors.white),
+        Icon(Icons.lightbulb, size: 30, color: isDayMode ? Colors.black : Colors.white),
+        Icon(Icons.quiz, size: 30, color: isDayMode ? Colors.black : Colors.white),
+      ];
     }
   }
   @override

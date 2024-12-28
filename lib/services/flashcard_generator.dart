@@ -54,23 +54,19 @@ class FlashcardGenerator {
   /// Parses raw flashcards into a structured format
   List<Map<String, String>> _parseFlashcards(String rawFlashcards) {
     try {
-      // Updated regex pattern to match both asterisk and numbered formats
+      // Regex pattern to match flashcard format
       final qaPattern = RegExp(
-          r'(?:\*\*Front:?\*\*|\*\*Q:?\*\*|Front:|\d+\.\s*Front:?)\s*(.*?)\s*(?:\*\*Back:?\*\*|\*\*A:?\*\*|Back:)\s*(.*?)(?=(?:\n\s*(?:\*\*Front:?\*\*|\*\*Q:?\*\*|Front:|\d+\.\s*Front:?))|$)',
+          r'(?:\*\*Front:?\*\*|Front:|\d+\.\s*Front:?)\s*(.*?)\s*(?:\*\*Back:?\*\*|Back:)\s*(.*?)(?=(?:\n\s*(?:\*\*Front:?\*\*|Front:|\d+\.\s*Front:?))|$)',
           dotAll: true,
-          multiLine: true
-      );
+          multiLine: true);
 
       final matches = qaPattern.allMatches(rawFlashcards);
 
       return matches.map((match) {
-        final question = match.group(1)?.trim().replaceAll(r'\n', '\n')
-            .replaceAll(r'\*', '*').replaceAll(r'\_', '_');
-        final answer = match.group(2)?.trim().replaceAll(r'\n', '\n')
-            .replaceAll(r'\*', '*').replaceAll(r'\_', '_');
+        final question = match.group(1)?.trim();
+        final answer = match.group(2)?.trim();
 
-        if (question == null || answer == null ||
-            question.isEmpty || answer.isEmpty) {
+        if (question == null || answer == null || question.isEmpty || answer.isEmpty) {
           return null;
         }
 

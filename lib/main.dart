@@ -45,27 +45,17 @@ class MyApp extends StatelessWidget {
       ],
       child: Consumer<UserProvider>(
         builder: (context, userProvider, child) {
-          if (userProvider.user == null && user != null) {
-            return const Scaffold(
-              body: Center(
-                child: CircularProgressIndicator(),
-              ),
-            );
-          }
-
-          final role = userProvider.user?.role ?? 'member';
-
+          // Use MaterialApp at all times to ensure Directionality is available.
           return MaterialApp(
             debugShowCheckedModeBanner: false,
+            home: _buildHome(userProvider, user),
             initialRoute: '/',
             routes: {
-              '/': (context) => user == null
-                  ? WelcomeScreen()
-                  : DashboardScreen(role: role),
               '/login': (context) => LoginScreen(),
               '/register': (context) => RegistrationScreen(),
-              '/dashboard_screen': (context) => DashboardScreen(role: role),
-              '/user_screen': (context) => UserScreen(),
+              '/dashboard_screen': (context) =>
+                  DashboardScreen(role: userProvider.user?.role ?? 'member'),
+              '/settings': (context) => UserScreen(),
             },
             onUnknownRoute: (settings) {
               return MaterialPageRoute(
@@ -80,5 +70,21 @@ class MyApp extends StatelessWidget {
         },
       ),
     );
+  }
+
+  // Helper method to decide the home widget.
+  Widget _buildHome(UserProvider userProvider, User? user) {
+    if (userProvider.user == null && user != null) {
+      // Show a loading state while user data is being fetched
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    // Check user's role or authentication state
+    final role = userProvider.user?.role ?? 'member';
+    return user == null ? WelcomeScreen() : DashboardScreen(role: role);
   }
 }

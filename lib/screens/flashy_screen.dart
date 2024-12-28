@@ -22,7 +22,15 @@ class _FlashyScreenState extends State<FlashyScreen> {
   final TextEditingController questionController = TextEditingController();
   final TextEditingController answerController = TextEditingController();
 
+  String? selectedFolder;
+  List<String> availableFolders = [];
   Color selectedColor = Colors.blue;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAvailableFolders();
+  }
 
   @override
   void dispose() {
@@ -32,8 +40,77 @@ class _FlashyScreenState extends State<FlashyScreen> {
     super.dispose();
   }
 
-  /// Kart ekleme veya düzenleme
-  void _addOrEditFlashcard({String? cardId, Map<String, dynamic>? existingCard}) async {
+  /// Firestore'dan klasörleri yükler
+  void _loadAvailableFolders() async {
+    final snapshot = await _firestore.collection('folders').get();
+    setState(() {
+      availableFolders = snapshot.docs.map((doc) => doc.id).toList();
+    });
+  }
+
+  /// Flashcardları PDF dosyasından ekler
+  Future<void> _addFlashcardsFromFile() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['pdf'], // Sadece PDF dosyaları seçilir
+    );
+
+    if (result != null && result.files.single.path != null) {
+      String filePath = result.files.single.path!;
+      try {
+        // FlashcardGenerator ile flashcardları oluştur
+        List<Map<String, String>> flashcards =
+        await _flashcardGenerator.processFileAndGenerateFlashcards(filePath);
+
+        if (flashcards.isNotEmpty) {
+          final folderName = filePath.split('/').last.split('.').first;
+          final folderRef = _firestore.collection('folders').doc(folderName);
+
+          // Yeni klasör oluştur
+          await folderRef.set({
+            'name': folderName,
+            'createdAt': DateTime.now(),
+          });
+
+          // Flashcardları Firestore'a ekle
+          for (var card in flashcards) {
+            await folderRef.collection('flashcards').add({
+              'title': 'Generated Card',
+              'question': card['question'],
+              'answer': card['answer'],
+              'color': Colors.blue.value,
+              'showAnswer': false,
+              'createdAt': DateTime.now(),
+            });
+          }
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Flashcards added to folder: $folderName')),
+          );
+
+          _loadAvailableFolders(); // Klasörleri yeniden yükle
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('No flashcards generated from the file.')),
+          );
+        }
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: ${e.toString()}')),
+        );
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No file selected.')),
+      );
+    }
+  }
+
+  /// Flashcard düzenleme veya ekleme modalını açar
+  void _addOrEditFlashcard(
+      {String? cardId,
+        Map<String, dynamic>? existingCard,
+        String? folderName}) async {
     if (existingCard != null) {
       titleController.text = existingCard['title'];
       questionController.text = existingCard['question'];
@@ -89,35 +166,50 @@ class _FlashyScreenState extends State<FlashyScreen> {
                 onPressed: () async {
                   if (titleController.text.isNotEmpty &&
                       questionController.text.isNotEmpty &&
-                      answerController.text.isNotEmpty) {
-                    final currentUser = _auth.currentUser;
-                    if (currentUser != null) {
-                      final cardData = {
-                        'title': titleController.text,
-                        'question': questionController.text,
-                        'answer': answerController.text,
-                        'color': selectedColor.value,
-                        'userId': currentUser.uid,
-                        'showAnswer': false,
-                      };
+                      answerController.text.isNotEmpty &&
+                      folderName != null) {
+                    final folderRef = _firestore.collection('folders').doc(folderName);
+                    final cardData = {
+                      'title': titleController.text,
+                      'question': questionController.text,
+                      'answer': answerController.text,
+                      'color': selectedColor.value,
+                      'showAnswer': false,
+                      'createdAt': DateTime.now(),
+                    };
 
-                      if (cardId != null) {
-                        // Kartı güncelle
-                        await _firestore.collection('flashcards').doc(cardId).update(cardData);
-                      } else {
-                        // Yeni kart ekle
-                        await _firestore.collection('flashcards').add(cardData);
-                      }
-
-                      titleController.clear();
-                      questionController.clear();
-                      answerController.clear();
-                      Navigator.pop(context); // Modal'ı kapat
+                    if (cardId != null) {
+                      await folderRef
+                          .collection('flashcards')
+                          .doc(cardId)
+                          .update(cardData);
+                    } else {
+                      await folderRef.collection('flashcards').add(cardData);
                     }
+
+                    titleController.clear();
+                    questionController.clear();
+                    answerController.clear();
+                    Navigator.pop(context); // Modal'ı kapat
                   }
                 },
                 child: Text(existingCard == null ? "Kartı Ekle" : "Kartı Güncelle"),
               ),
+              if (cardId != null)
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red, // Sil butonuna kırmızı renk
+                  ),
+                  onPressed: () async {
+                    final folderRef = _firestore.collection('folders').doc(folderName);
+                    await folderRef.collection('flashcards').doc(cardId).delete();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Kart silindi.')),
+                    );
+                    Navigator.pop(context); // Modal'ı kapat
+                  },
+                  child: const Text("Kartı Sil"),
+                ),
             ],
           ),
         );
@@ -125,47 +217,7 @@ class _FlashyScreenState extends State<FlashyScreen> {
     );
   }
 
-  /// Flashcardları dosyadan ekleme
-  Future<void> _addFlashcardsFromFile() async {
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['pdf'],
-    );
-
-    if (result != null && result.files.single.path != null) {
-      String filePath = result.files.single.path!;
-      List<Map<String, String>> flashcards =
-      await _flashcardGenerator.processFileAndGenerateFlashcards(filePath);
-
-      if (flashcards.isNotEmpty) {
-        final currentUser = _auth.currentUser;
-
-        for (var card in flashcards) {
-          await _firestore.collection('flashcards').add({
-            'title': 'Generated Flashcard',
-            'question': card['question'],
-            'answer': card['answer'],
-            'color': Colors.blue.value, // Varsayılan renk
-            'userId': currentUser?.uid,
-            'showAnswer': false,
-          });
-        }
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Flashcards successfully added!')),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No flashcards were generated.')),
-        );
-      }
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No file selected.')),
-      );
-    }
-  }
-
+  /// Kart rengini seçmek için renk daireleri
   Widget _buildColorCircle(Color color) {
     return GestureDetector(
       onTap: () {
@@ -183,6 +235,85 @@ class _FlashyScreenState extends State<FlashyScreen> {
     );
   }
 
+  /// Flashcardları Firestore'dan görüntüler
+  Widget _buildFlashcards(String folderName) {
+    return StreamBuilder<QuerySnapshot>(
+      stream:
+      _firestore.collection('folders').doc(folderName).collection('flashcards').snapshots(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return const Center(child: Text("Bu klasörde flashcard yok."));
+        }
+
+        final flashcards = snapshot.data!.docs;
+
+        return ListView.builder(
+          padding: const EdgeInsets.all(16),
+          itemCount: flashcards.length,
+          itemBuilder: (context, index) {
+            final card = flashcards[index].data() as Map<String, dynamic>;
+            final cardId = flashcards[index].id;
+
+            return GestureDetector(
+              onTap: () async {
+                final docRef = flashcards[index].reference;
+                final currentShowAnswer = card['showAnswer'] ?? false;
+                await docRef.update({'showAnswer': !currentShowAnswer});
+              },
+              onLongPress: () {
+                _addOrEditFlashcard(
+                    cardId: cardId, existingCard: card, folderName: folderName);
+              },
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                padding: const EdgeInsets.all(16),
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: Color(card['color']),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      card['title'] ?? 'Question',
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      "Question: ${card['question']}",
+                      style: const TextStyle(fontSize: 16, color: Colors.white70),
+                    ),
+                    if (card['showAnswer'] ?? false)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 16),
+                        child: Text(
+                          "Answer: ${card['answer']}",
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDayMode = widget.isDayMode;
@@ -194,102 +325,36 @@ class _FlashyScreenState extends State<FlashyScreen> {
         title: const Text("Flashy"),
         actions: [
           IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: () => _addOrEditFlashcard(),
-          ),
-          IconButton(
             icon: const Icon(Icons.upload_file),
-            onPressed: _addFlashcardsFromFile,
+            onPressed: _addFlashcardsFromFile, // Dosya yükleme
           ),
         ],
       ),
-      body: StreamBuilder<QuerySnapshot>(
-        stream: _firestore
-            .collection('flashcards')
-            .where('userId', isEqualTo: _auth.currentUser?.uid)
-            .snapshots(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-            return Center(
-              child: Text(
-                "Henüz flashcard oluşturulmadı!",
-                style: TextStyle(
-                  fontSize: 18,
-                  color: isDayMode ? Colors.black : Colors.white,
-                ),
-              ),
-            );
-          }
-
-          final flashcards = snapshot.data!.docs;
-
-          return ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: flashcards.length,
-            itemBuilder: (context, index) {
-              final card = flashcards[index].data() as Map<String, dynamic>;
-              final cardId = flashcards[index].id;
-
-              return GestureDetector(
-                onTap: () async {
-                  await _firestore
-                      .collection('flashcards')
-                      .doc(cardId)
-                      .update({'showAnswer': !(card['showAnswer'] ?? false)});
-                },
-                onLongPress: () {
-                  _addOrEditFlashcard(cardId: cardId, existingCard: card);
-                },
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 300),
-                  padding: const EdgeInsets.all(16),
-                  margin: const EdgeInsets.only(bottom: 16),
-                  decoration: BoxDecoration(
-                    color: Color(card['color']),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        card['title'],
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        "Soru: ${card['question']}",
-                        style: const TextStyle(
-                          fontSize: 16,
-                          color: Colors.white70,
-                        ),
-                      ),
-                      if (card['showAnswer'] ?? false)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 16),
-                          child: Text(
-                            "Cevap: ${card['answer']}",
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-              );
-            },
-          );
-        },
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: DropdownButton<String>(
+              value: selectedFolder,
+              hint: const Text("Klasör Seç"),
+              items: availableFolders.map((folder) {
+                return DropdownMenuItem(
+                  value: folder,
+                  child: Text(folder),
+                );
+              }).toList(),
+              onChanged: (value) {
+                setState(() {
+                  selectedFolder = value;
+                });
+              },
+            ),
+          ),
+          if (selectedFolder != null)
+            Expanded(child: _buildFlashcards(selectedFolder!))
+          else
+            const Center(child: Text("Lütfen bir klasör seçin.")),
+        ],
       ),
     );
   }

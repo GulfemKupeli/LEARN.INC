@@ -13,12 +13,12 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _isLoading = false;
-  late bool _isDayMode; // Determines whether it's day or night mode
+  late bool _isDayMode;
 
   @override
   void initState() {
     super.initState();
-    _updateThemeBasedOnTime(); // Set theme based on the current time
+    _updateThemeBasedOnTime();
   }
 
   void _updateThemeBasedOnTime() {
@@ -26,23 +26,57 @@ class _LoginScreenState extends State<LoginScreen> {
     _isDayMode = hour >= 6 && hour < 18; // Day mode for 6 AM - 6 PM
   }
 
+  bool _validateInputs() {
+    if (!_emailController.text.contains('@') || !_emailController.text.contains('.')) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please enter a valid email address.")),
+      );
+      return false;
+    }
+    if (_passwordController.text.length < 6) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Password must be at least 6 characters long.")),
+      );
+      return false;
+    }
+    return true;
+  }
+
   Future<void> _login() async {
+    if (!_validateInputs()) return;
+
     setState(() {
       _isLoading = true;
     });
 
     try {
-      // Perform login
       await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
 
-      // Navigate based on user role
       await _checkUserRole();
+    } on FirebaseAuthException catch (e) {
+      String errorMessage;
+      switch (e.code) {
+        case 'user-not-found':
+          errorMessage = "No user found for this email.";
+          break;
+        case 'wrong-password':
+          errorMessage = "Invalid password. Please try again.";
+          break;
+        case 'invalid-email':
+          errorMessage = "The email address is not valid.";
+          break;
+        default:
+          errorMessage = "Login failed. Please try again.";
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(errorMessage)),
+      );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Login Failed: ${e.toString()}")),
+        SnackBar(content: Text("An unexpected error occurred: $e")),
       );
     } finally {
       setState(() {
@@ -131,56 +165,58 @@ class _LoginScreenState extends State<LoginScreen> {
                         height: 100,
                       ),
                     ),
-                    SizedBox(height: 16),
+                    const SizedBox(height: 16),
                     // Welcome Text
                     Text(
                       _isDayMode ? "Good Morning" : "Good Evening",
                       textAlign: TextAlign.center,
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 28,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
                       ),
                     ),
-                    SizedBox(height: 20),
+                    const SizedBox(height: 20),
                     // Email Input
                     TextField(
                       controller: _emailController,
                       decoration: InputDecoration(
-                        hintText: "Email",
-                        hintStyle: TextStyle(color: Colors.white70),
+                        labelText: "Email",
+                        hintText: "Enter your email",
+                        hintStyle: const TextStyle(color: Colors.white70),
                         filled: true,
                         fillColor: Colors.white.withOpacity(0.2),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(30),
                           borderSide: BorderSide.none,
                         ),
-                        prefixIcon: Icon(Icons.email, color: Colors.white),
+                        prefixIcon: const Icon(Icons.email, color: Colors.white),
                       ),
-                      style: TextStyle(color: Colors.white),
+                      style: const TextStyle(color: Colors.white),
                     ),
-                    SizedBox(height: 16),
+                    const SizedBox(height: 16),
                     // Password Input
                     TextField(
                       controller: _passwordController,
                       obscureText: true,
                       decoration: InputDecoration(
-                        hintText: "Password",
-                        hintStyle: TextStyle(color: Colors.white70),
+                        labelText: "Password",
+                        hintText: "Enter your password",
+                        hintStyle: const TextStyle(color: Colors.white70),
                         filled: true,
                         fillColor: Colors.white.withOpacity(0.2),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(30),
                           borderSide: BorderSide.none,
                         ),
-                        prefixIcon: Icon(Icons.lock, color: Colors.white),
+                        prefixIcon: const Icon(Icons.lock, color: Colors.white),
                       ),
-                      style: TextStyle(color: Colors.white),
+                      style: const TextStyle(color: Colors.white),
                     ),
-                    SizedBox(height: 24),
+                    const SizedBox(height: 24),
                     // Login Button
                     _isLoading
-                        ? CircularProgressIndicator(color: Colors.white)
+                        ? const CircularProgressIndicator(color: Colors.white)
                         : ElevatedButton(
                       onPressed: _login,
                       style: ElevatedButton.styleFrom(
@@ -190,20 +226,20 @@ class _LoginScreenState extends State<LoginScreen> {
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(30),
                         ),
-                        padding: EdgeInsets.symmetric(vertical: 16),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
                       ),
-                      child: Text(
+                      child: const Text(
                         "Login",
                         style: TextStyle(fontSize: 18, color: Colors.white),
                       ),
                     ),
-                    SizedBox(height: 16),
+                    const SizedBox(height: 16),
                     // Sign Up Link
                     TextButton(
                       onPressed: () {
                         Navigator.pushNamed(context, '/register');
                       },
-                      child: Text(
+                      child: const Text(
                         "Don't have an account? Sign Up",
                         style: TextStyle(color: Colors.white),
                       ),

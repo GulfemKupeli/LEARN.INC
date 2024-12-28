@@ -91,14 +91,22 @@ class _QuizzesScreenState extends State<QuizzesScreen> {
   }
 
   // Calculate the quiz score
-  int calculateScore() {
+  Map<String, dynamic> calculateResults() {
     int correct = 0;
+    Map<int, bool> questionResults = {};
+
     for (int i = 0; i < quizQuestions.length; i++) {
-      if (selectedAnswers[i] == quizQuestions[i].options.indexOf(quizQuestions[i].answer)) {
-        correct++;
-      }
+      bool isCorrect = selectedAnswers[i] == quizQuestions[i].options.indexOf(quizQuestions[i].answer);
+      questionResults[i] = isCorrect;
+      if (isCorrect) correct++;
     }
-    return correct;
+
+    return {
+      'score': correct,
+      'total': quizQuestions.length,
+      'percentage': (correct / quizQuestions.length * 100).round(),
+      'questionResults': questionResults,
+    };
   }
 
   @override
@@ -110,77 +118,136 @@ class _QuizzesScreenState extends State<QuizzesScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.upload_file),
-            onPressed: handleFileUpload, // Trigger file upload
+            onPressed: handleFileUpload,
           ),
         ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: isLoading
-            ? const Center(child: CircularProgressIndicator()) // Show loading indicator
+            ? const Center(child: CircularProgressIndicator())
             : errorMessage != null
             ? Center(child: Text(errorMessage!))
             : quizQuestions.isEmpty
             ? const Center(
           child: Text('No quiz generated yet. Upload a file to generate quiz.'),
         )
-            : SingleChildScrollView( // Wrap content in SingleChildScrollView to avoid overflow
+            : SingleChildScrollView(
           child: Column(
             children: [
               const SizedBox(height: 16),
+              if (showResults) _buildResultsSummary(),
               ...List.generate(
                 quizQuestions.length,
-                    (qIndex) {
-                  final question = quizQuestions[qIndex];
-                  return Card(
-                    key: ValueKey(qIndex),
-                    margin: const EdgeInsets.symmetric(vertical: 8.0),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            '${qIndex + 1}. ${question.question}',
-                            style: const TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          const SizedBox(height: 8),
-                          ...List.generate(
-                            question.options.length,
-                                (oIndex) => RadioListTile<int>(
-                              title: Text(question.options[oIndex]),
-                              value: oIndex,
-                              groupValue: selectedAnswers[qIndex],
-                              onChanged: (value) {
-                                handleAnswerSelect(qIndex, value!); // Handle answer selection
-                              },
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
+                    (qIndex) => _buildQuestionCard(qIndex),
               ),
               const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () {
-                  setState(() {
-                    showResults = true; // Show results after submission
-                  });
-                },
-                child: const Text('Submit Quiz'),
-              ),
+              if (!showResults)
+                ElevatedButton(
+                  onPressed: selectedAnswers.length == quizQuestions.length
+                      ? () {
+                    setState(() {
+                      showResults = true;
+                    });
+                  }
+                      : null,
+                  child: const Text('Submit Quiz'),
+                ),
               if (showResults)
-                Padding(
-                  padding: const EdgeInsets.only(top: 16.0),
-                  child: Text(
-                    'You got ${calculateScore()} out of ${quizQuestions.length} questions correct!',
-                    style: TextStyle(fontSize: 18, color: Colors.green),
-                  ),
+                ElevatedButton(
+                  onPressed: () {
+                    setState(() {
+                      showResults = false;
+                      selectedAnswers.clear();
+                    });
+                  },
+                  child: const Text('Retry Quiz'),
                 ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildResultsSummary() {
+    final results = calculateResults();
+    return Card(
+      margin: const EdgeInsets.only(bottom: 16.0),
+      color: Colors.blue.shade50,
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            Text(
+              'Quiz Results',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Score: ${results['score']} out of ${results['total']}',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            Text(
+              'Percentage: ${results['percentage']}%',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                color: results['percentage'] >= 70 ? Colors.green : Colors.red,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildQuestionCard(int qIndex) {
+    final question = quizQuestions[qIndex];
+    final results = showResults ? calculateResults() : null;
+    final isCorrect = results?['questionResults'][qIndex] ?? false;
+    final correctAnswerIndex = question.options.indexOf(question.answer);
+
+    return Card(
+      key: ValueKey(qIndex),
+      margin: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Question ${qIndex + 1}: ${question.question}',
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+                if (showResults)
+                  Icon(
+                    isCorrect ? Icons.check_circle : Icons.cancel,
+                    color: isCorrect ? Colors.green : Colors.red,
+                  ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            ...List.generate(
+              question.options.length,
+                  (oIndex) => RadioListTile<int>(
+                title: Text(
+                  question.options[oIndex],
+                  style: showResults && oIndex == correctAnswerIndex
+                      ? const TextStyle(color: Colors.green, fontWeight: FontWeight.bold)
+                      : null,
+                ),
+                value: oIndex,
+                groupValue: selectedAnswers[qIndex],
+                onChanged: showResults ? null : (value) => handleAnswerSelect(qIndex, value!),
+                subtitle: showResults && oIndex == correctAnswerIndex
+                    ? const Text('Correct Answer', style: TextStyle(color: Colors.green))
+                    : null,
+              ),
+            ),
+          ],
         ),
       ),
     );

@@ -10,7 +10,6 @@ final String endpoint =
     'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent';
 
 class ApiService {
-  /// Chatbot API Çağrısı
   Future<String> callChatbot(String userMessage) async {
     final response = await http.post(
       Uri.parse('$endpoint?key=$apiKey'),

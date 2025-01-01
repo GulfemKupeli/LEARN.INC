@@ -320,42 +320,70 @@ class _FlashyScreenState extends State<FlashyScreen> {
 
     return Scaffold(
       backgroundColor: isDayMode ? Color(0xFFE0F7FA) : Color(0xFF263238),
-      appBar: AppBar(
-        backgroundColor: isDayMode ? Color(0xFF4DD0E1) : Color(0xFF37474F),
-        title: const Text("Flashy"),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.upload_file),
-            onPressed: _addFlashcardsFromFile, // Dosya yükleme
-          ),
-        ],
-      ),
       body: Column(
         children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: DropdownButton<String>(
-              value: selectedFolder,
-              hint: const Text("Klasör Seç"),
-              items: availableFolders.map((folder) {
-                return DropdownMenuItem(
-                  value: folder,
-                  child: Text(folder),
-                );
-              }).toList(),
-              onChanged: (value) {
-                setState(() {
-                  selectedFolder = value;
-                });
-              },
+          Container(
+            height: 60.0, // TopBar'ın yüksekliği kadar
+            color: isDayMode ? Color(0xFF4DD0E1) : Color(0xFF37474F), // AppBar rengiyle aynı renk
+          ),
+
+          // AppBar
+          PreferredSize(
+            preferredSize: const Size.fromHeight(56.0), // AppBar yüksekliği
+            child: AppBar(
+              backgroundColor: isDayMode ? Color(0xFF4DD0E1) : Color(0xFF37474F),
+              title: const Text("Flashy"),
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.upload_file),
+                  onPressed: _addFlashcardsFromFile, // Dosya yükleme
+                ),
+              ],
             ),
           ),
-          if (selectedFolder != null)
-            Expanded(child: _buildFlashcards(selectedFolder!))
-          else
-            const Center(child: Text("Lütfen bir klasör seçin.")),
+
+          // İçerik
+          Expanded(
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: DropdownButton<String>(
+                    value: selectedFolder,
+                    hint: const Text("Select a Folder"),
+                    items: availableFolders.map((folder) {
+                      return DropdownMenuItem(
+                        value: folder,
+                        child: Text(folder),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        selectedFolder = value;
+                      });
+                    },
+                  ),
+                ),
+                if (selectedFolder != null)
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      child: _buildFlashcards(selectedFolder!),
+                    ),
+                  )
+                else
+                  const Expanded(
+                    child: Center(
+                      child: Text("Please, select a folder."),
+                    ),
+                  ),
+              ],
+            ),
+          ),
         ],
       ),
     );
+
+
   }
 }

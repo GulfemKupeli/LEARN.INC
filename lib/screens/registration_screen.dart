@@ -17,6 +17,8 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
   String _selectedRole = "None"; // Default role
   bool _isLoading = false;
   bool _isDayMode = true; // Default mode
+
+
   Future<void> _register() async {
     setState(() {
       _isLoading = true;
@@ -317,4 +319,5 @@ class WavePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(CustomPainter oldDelegate) => false;
+
 }

@@ -169,16 +169,29 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: _colors.backgroundColor,
-      appBar: AppBar(
-        backgroundColor: _colors.appBarColor,
-        title: Text(
-          "Chat Assistant",
-          style: TextStyle(color: _colors.appBarTextColor),
-        ),
-        iconTheme: IconThemeData(color: _colors.appBarTextColor),
-        elevation: 2,
-      ),
-      body: Column(
+        body: Column(
+        children: [
+        // Üst boşluğu doldur
+        Container(
+        height: 40.0, // Üst boşluk yüksekliği (istenilen kadar ayarlayabilirsiniz)
+        color: const Color(0xFF4DD0E1), // AppBar rengiyle aynı renk
+    ),
+
+    // AppBar
+    PreferredSize(
+    preferredSize: const Size.fromHeight(56.0), // AppBar yüksekliği
+    child: AppBar(
+    backgroundColor: _colors.appBarColor, // AppBar rengi
+    title: Text(
+    "Chat Assistant",
+    style: TextStyle(color: _colors.appBarTextColor), // AppBar metin rengi
+    ),
+    iconTheme: IconThemeData(color: _colors.appBarTextColor), // Simge rengi
+    elevation: 2, // AppBar gölgesi
+    ),
+    ),
+    Expanded(
+    child: Column(
         children: [
           Expanded(
             child: ListView.builder(
@@ -349,7 +362,7 @@ class _ChatScreenState extends State<ChatScreen> {
           ),
         ],
       ),
-    );
+    ),],),);
   }
 }
 

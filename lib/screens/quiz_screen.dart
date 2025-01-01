@@ -111,64 +111,88 @@ class _QuizzesScreenState extends State<QuizzesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDayMode = widget.isDayMode;
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Quiz Generator'),
-        backgroundColor: widget.isDayMode ? Colors.blue : Colors.black,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.upload_file),
-            onPressed: handleFileUpload,
+      backgroundColor: isDayMode ? const Color(0xFFE0F7FA) : const Color(0xFF263238), // Ana arka plan rengi
+      body: Column(
+        children: [
+          // Üst boşluk
+          Container(
+            height: 40.0, // Üst boşluk yüksekliği
+            color: isDayMode ? const Color(0xFF4DD0E1) : const Color(0xFF37474F), // AppBar rengi
+          ),
+
+          // AppBar
+          PreferredSize(
+            preferredSize: const Size.fromHeight(56.0), // AppBar yüksekliği
+            child: AppBar(
+              backgroundColor: isDayMode ? const Color(0xFF4DD0E1) : const Color(0xFF37474F),
+              title: const Text(
+                'Quiz Generator',
+                style: TextStyle(color: Colors.black),
+              ),
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.upload_file),
+                  onPressed: handleFileUpload,
+                ),
+              ],
+            ),
+          ),
+
+          // İçerik
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : errorMessage != null
+                  ? Center(child: Text(errorMessage!))
+                  : quizQuestions.isEmpty
+                  ? const Center(
+                child: Text('No quiz generated yet. Upload a file to generate quiz.'),
+              )
+                  : SingleChildScrollView(
+                child: Column(
+                  children: [
+                    const SizedBox(height: 16),
+                    if (showResults) _buildResultsSummary(),
+                    ...List.generate(
+                      quizQuestions.length,
+                          (qIndex) => _buildQuestionCard(qIndex),
+                    ),
+                    const SizedBox(height: 16),
+                    if (!showResults)
+                      ElevatedButton(
+                        onPressed: selectedAnswers.length == quizQuestions.length
+                            ? () {
+                          setState(() {
+                            showResults = true;
+                          });
+                        }
+                            : null,
+                        child: const Text('Submit Quiz'),
+                      ),
+                    if (showResults)
+                      ElevatedButton(
+                        onPressed: () {
+                          setState(() {
+                            showResults = false;
+                            selectedAnswers.clear();
+                          });
+                        },
+                        child: const Text('Retry Quiz'),
+                      ),
+                  ],
+                ),
+              ),
+            ),
           ),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : errorMessage != null
-            ? Center(child: Text(errorMessage!))
-            : quizQuestions.isEmpty
-            ? const Center(
-          child: Text('No quiz generated yet. Upload a file to generate quiz.'),
-        )
-            : SingleChildScrollView(
-          child: Column(
-            children: [
-              const SizedBox(height: 16),
-              if (showResults) _buildResultsSummary(),
-              ...List.generate(
-                quizQuestions.length,
-                    (qIndex) => _buildQuestionCard(qIndex),
-              ),
-              const SizedBox(height: 16),
-              if (!showResults)
-                ElevatedButton(
-                  onPressed: selectedAnswers.length == quizQuestions.length
-                      ? () {
-                    setState(() {
-                      showResults = true;
-                    });
-                  }
-                      : null,
-                  child: const Text('Submit Quiz'),
-                ),
-              if (showResults)
-                ElevatedButton(
-                  onPressed: () {
-                    setState(() {
-                      showResults = false;
-                      selectedAnswers.clear();
-                    });
-                  },
-                  child: const Text('Retry Quiz'),
-                ),
-            ],
-          ),
-        ),
-      ),
     );
   }
+
 
   Widget _buildResultsSummary() {
     final results = calculateResults();

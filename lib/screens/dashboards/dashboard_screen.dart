@@ -17,6 +17,7 @@ class DashboardScreen extends StatefulWidget {
   const DashboardScreen({Key? key, required this.role}) : super(key: key);
   final String role;
 
+
   @override
   _DashboardScreenState createState() => _DashboardScreenState();
 }
@@ -25,8 +26,8 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
   int _currentIndex = 0; // Default index to show the MainPage
   AnimationController? _controller; // Nullable controller
   Animation<double>? _animation; // Nullable animation
-  late List<Widget> _pages;
-  late List<Icon> _icons;
+  late List<Widget> _pages = [];
+  late List<Icon> _icons= [];
 
   @override
   void initState() {
@@ -43,7 +44,13 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
       CurvedAnimation(parent: _controller!, curve: Curves.easeInOut),
     );
 
-    // Initialize the list of pages
+    // Role-based configuration with delayed call
+    Future.delayed(Duration.zero, () {
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      _configureRoleBasedContent(userProvider.isDayMode);
+    });
+
+
     _pages = [
       MainPage(animation: _animation), // Main page with octopus
       FlashyScreen(isDayMode: true,),
@@ -164,13 +171,14 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
         animationDuration: const Duration(milliseconds: 300),
         animationCurve: Curves.easeInOut,
         index: _currentIndex,
-        items: <Widget>[
+        items: _icons,
+        /*items: <Widget>[
           Icon(Icons.home, size: 30, color: isDayMode ? Colors.black : Colors.white),
           Icon(Icons.flash_on, size: 30, color: isDayMode ? Colors.black : Colors.white),
           Icon(Icons.chat, size: 30, color: isDayMode ? Colors.black : Colors.white),
           Icon(Icons.lightbulb, size: 30, color: isDayMode ? Colors.black : Colors.white),
           Icon(Icons.quiz, size: 30, color: isDayMode ? Colors.black : Colors.white),
-        ],
+        ],*/
         onTap: (index) {
           setState(() {
             _currentIndex = index;

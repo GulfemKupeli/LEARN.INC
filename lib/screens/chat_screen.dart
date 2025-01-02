@@ -183,7 +183,7 @@ class _ChatScreenState extends State<ChatScreen> {
     child: AppBar(
     backgroundColor: _colors.appBarColor, // AppBar rengi
     title: Text(
-    "Chat Assistant",
+    "Sashimi",
     style: TextStyle(color: _colors.appBarTextColor), // AppBar metin rengi
     ),
     iconTheme: IconThemeData(color: _colors.appBarTextColor), // Simge rengi

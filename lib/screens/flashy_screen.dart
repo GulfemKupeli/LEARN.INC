@@ -48,17 +48,16 @@ class _FlashyScreenState extends State<FlashyScreen> {
     });
   }
 
-  /// Flashcardları PDF dosyasından ekler
   Future<void> _addFlashcardsFromFile() async {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
-      allowedExtensions: ['pdf'], // Sadece PDF dosyaları seçilir
+      allowedExtensions: ['pdf'],
     );
 
     if (result != null && result.files.single.path != null) {
       String filePath = result.files.single.path!;
       try {
-        // FlashcardGenerator ile flashcardları oluştur
+
         List<Map<String, String>> flashcards =
         await _flashcardGenerator.processFileAndGenerateFlashcards(filePath);
 
@@ -66,16 +65,13 @@ class _FlashyScreenState extends State<FlashyScreen> {
           final folderName = filePath.split('/').last.split('.').first;
           final folderRef = _firestore.collection('folders').doc(folderName);
 
-          // Yeni klasör oluştur
           await folderRef.set({
             'name': folderName,
             'createdAt': DateTime.now(),
           });
-
-          // Flashcardları Firestore'a ekle
           for (var card in flashcards) {
             await folderRef.collection('flashcards').add({
-              'title': 'Generated Card',
+              'title': 'ଳ',
               'question': card['question'],
               'answer': card['answer'],
               'color': Colors.blue.value,
@@ -106,7 +102,7 @@ class _FlashyScreenState extends State<FlashyScreen> {
     }
   }
 
-  /// Flashcard düzenleme veya ekleme modalını açar
+
   void _addOrEditFlashcard(
       {String? cardId,
         Map<String, dynamic>? existingCard,
@@ -217,7 +213,6 @@ class _FlashyScreenState extends State<FlashyScreen> {
     );
   }
 
-  /// Kart rengini seçmek için renk daireleri
   Widget _buildColorCircle(Color color) {
     return GestureDetector(
       onTap: () {
@@ -235,7 +230,6 @@ class _FlashyScreenState extends State<FlashyScreen> {
     );
   }
 
-  /// Flashcardları Firestore'dan görüntüler
   Widget _buildFlashcards(String folderName) {
     return StreamBuilder<QuerySnapshot>(
       stream:

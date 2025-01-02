@@ -78,8 +78,7 @@ class FlashcardGenerator {
     } catch (e) {
       print("Parsing Error: $e");
       return [];
-    }
-  }
+    }  }
 
   /// Processes a picked file
   Future<List<Map<String, String>>> processPickedFile(String? filePath) async {

@@ -171,14 +171,13 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
         animationDuration: const Duration(milliseconds: 300),
         animationCurve: Curves.easeInOut,
         index: _currentIndex,
-        items: _icons,
-        /*items: <Widget>[
+        items: <Widget>[
           Icon(Icons.home, size: 30, color: isDayMode ? Colors.black : Colors.white),
           Icon(Icons.flash_on, size: 30, color: isDayMode ? Colors.black : Colors.white),
           Icon(Icons.chat, size: 30, color: isDayMode ? Colors.black : Colors.white),
           Icon(Icons.lightbulb, size: 30, color: isDayMode ? Colors.black : Colors.white),
           Icon(Icons.quiz, size: 30, color: isDayMode ? Colors.black : Colors.white),
-        ],*/
+        ],
         onTap: (index) {
           setState(() {
             _currentIndex = index;

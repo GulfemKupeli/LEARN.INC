@@ -161,4 +161,24 @@ class UserProvider with ChangeNotifier {
       print("Error adding new user: $e");
     }
   }
+  Future<void> updateLives(int newLives) async {
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+    if (userId != null) {
+      try {
+        print('Updating lives in Firestore: $newLives');
+        // Firebase'de kullanıcı canını güncelle
+        await FirebaseFirestore.instance
+            .collection('Users')
+            .doc(userId)
+            .update({'Lives': newLives});
+
+        // Local kullanıcı verisini güncelle
+        _user = _user?.copyWith(lives: newLives);
+        notifyListeners();
+      } catch (e) {
+        print('Error updating lives: $e');
+      }
+    }
+  }
+
 }

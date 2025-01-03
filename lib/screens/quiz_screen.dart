@@ -4,7 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:syncfusion_flutter_pdf/pdf.dart';
 import '../services/api_service.dart'; // Import ApiService
-import '../file_upload_helper.dart'; // Import FileUploadHelper
+import '../file_upload_helper.dart';
+import '../services/live_controller.dart'; // Import FileUploadHelper
 
 class QuizzesScreen extends StatefulWidget {
   final bool isDayMode; // Theme Mode (Day/Night)
@@ -93,20 +94,37 @@ class _QuizzesScreenState extends State<QuizzesScreen> {
   // Calculate the quiz score
   Map<String, dynamic> calculateResults() {
     int correct = 0;
+    int wrongAnswers = 0;
     Map<int, bool> questionResults = {};
 
     for (int i = 0; i < quizQuestions.length; i++) {
-      bool isCorrect = selectedAnswers[i] == quizQuestions[i].options.indexOf(quizQuestions[i].answer);
-      questionResults[i] = isCorrect;
-      if (isCorrect) correct++;
-    }
+      bool isCorrect = selectedAnswers[i] == quizQuestions[i].correctAnswerIndex;
 
+      questionResults[i] = isCorrect;
+      if (isCorrect) {correct++;}
+      else{
+        wrongAnswers++;
+      }
+    }
     return {
       'score': correct,
       'total': quizQuestions.length,
       'percentage': (correct / quizQuestions.length * 100).round(),
       'questionResults': questionResults,
     };
+  }
+  void submitQuiz() async {
+    final results = await calculateResults();
+    final wrongAnswers = results['wrongAnswers'] as int;
+
+    if (wrongAnswers > 0) {
+      print('Wrong answers: $wrongAnswers');
+      await LiveController.reduceLive(context); // Eğer yanlış varsa can düşür
+    }
+
+    setState(() {
+      showResults = true;
+    });
   }
 
   @override
@@ -228,7 +246,7 @@ class _QuizzesScreenState extends State<QuizzesScreen> {
     final question = quizQuestions[qIndex];
     final results = showResults ? calculateResults() : null;
     final isCorrect = results?['questionResults'][qIndex] ?? false;
-    final correctAnswerIndex = question.options.indexOf(question.answer);
+    final correctAnswerIndex = question.correctAnswerIndex;
 
     return Card(
       key: ValueKey(qIndex),

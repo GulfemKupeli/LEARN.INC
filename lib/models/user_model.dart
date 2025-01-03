@@ -16,7 +16,7 @@ class UserModel {
     required this.profileImage,
     required this.role,
     this.points = 0,
-    this.lives = 3,
+    this.lives = 8,
     this.streakDays = 0,
     this.roleSpecificData = const {},
   });
@@ -70,7 +70,7 @@ class UserModel {
       profileImage: json['ProfileImage'] ?? '',
       role: json['Role'] ?? 'member',
       points: json['Points'] ?? 0,
-      lives: json['Lives'] ?? 3,
+      lives: json['Lives'] ?? 8,
       streakDays: json['StreakDays'] ?? 0,
       roleSpecificData: roleSpecificData,
     );

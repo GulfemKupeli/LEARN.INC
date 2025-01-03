@@ -35,7 +35,6 @@ class ApiService {
     }
   }
 
-  /// Quiz Soruları Üretme API Çağrısı
   Future<List<QuizQuestion>> generateQuizQuestions(String text) async {
     try {
       final response = await http.post(
@@ -48,13 +47,15 @@ class ApiService {
             {
               "parts": [
                 {
-                  "text": """Generate multiple-choice questions with 4 options each from the following text. Format each question as:
+                  "text": """Generate multiple-choice questions with 4 options each from the following text. Include the correct answer for each question explicitly. Format each question as:
 
 **1. Question text?**
 a) First option
 b) Second option
 c) Third option
 d) Fourth option
+
+**Correct Answer: c**
 
 $text"""
                 }
@@ -68,10 +69,14 @@ $text"""
         final data = jsonDecode(response.body);
         final result = data['candidates'][0]['content']['parts'][0]['text'] as String;
 
-        // Updated regex pattern to correctly capture all parts of the question
+        // Regex to parse questions and determine correct answers
         final RegExp questionRegExp = RegExp(
           r'\*\*\d+\.\s+(.*?)\*\*\s*\n\s*a\)\s*(.*?)\s*\n\s*b\)\s*(.*?)\s*\n\s*c\)\s*(.*?)\s*\n\s*d\)\s*(.*?)(?=\n\s*\*\*|\s*$)',
           dotAll: true,
+        );
+
+        final RegExp correctAnswerRegExp = RegExp(
+          r'\*\*Correct Answer: ([a-d])\*\*',
         );
 
         final matches = questionRegExp.allMatches(result);
@@ -87,14 +92,20 @@ $text"""
               match.group(5)?.trim() ?? '',
             ];
 
-            // Validate that we have all required data
+            int correctAnswerIndex = 0; // Varsayılan olarak ilk seçeneği doğru kabul eder
+            if (correctAnswerRegExp.hasMatch(result)) {
+              final correctMatch = correctAnswerRegExp.firstMatch(result);
+              if (correctMatch != null) {
+                String correctAnswerLetter = correctMatch.group(1) ?? 'a';
+                correctAnswerIndex = correctAnswerLetter.codeUnitAt(0) - 'a'.codeUnitAt(0);
+              }
+            }
+
             if (question.isNotEmpty && options.every((option) => option.isNotEmpty)) {
-              // For this example, we'll set the first option as the correct answer
-              // In a real application, you might want to have the API specify the correct answer
               questions.add(QuizQuestion(
                 question: question,
                 options: options,
-                answer: options[0],
+                correctAnswerIndex: correctAnswerIndex,
               ));
             }
           }
@@ -116,7 +127,8 @@ $text"""
 
 
 
-  List<QuizQuestion> _parseQuizQuestions(String text) {
+
+ /* List<QuizQuestion> _parseQuizQuestions(String text) {
     final RegExp questionRegExp = RegExp(
       r"\*\*(\d+)\.\s*(.*?)\n(a|b|c|d)\)\s*(.*?)\n", // Match question and options
       dotAll: true,
@@ -138,12 +150,13 @@ $text"""
       questions.add(QuizQuestion(
         question: question,
         options: options,
-        answer: answer,
-      ));
+        correctAnswerIndex: correctAnswerIndex, // Doğru cevabın indeksini sağlayın
+
+    ));
     }
 
     return questions;
-  }
+  }*/
 
 
 
@@ -276,28 +289,29 @@ $text"""
 class QuizQuestion {
   String question;
   List<String> options;
-  String answer;
+  int correctAnswerIndex; // Doğru cevabın indeksini saklar
 
   QuizQuestion({
     required this.question,
     required this.options,
-    required this.answer,
+    required this.correctAnswerIndex,
   });
 
   factory QuizQuestion.fromJson(Map<String, dynamic> json) {
     return QuizQuestion(
       question: json['question'],
       options: List<String>.from(json['options']),
-      answer: json['answer'],
+      correctAnswerIndex: json['correctAnswerIndex'],
     );
   }
 
   Map<String, dynamic> toJson() => {
     'question': question,
     'options': options,
-    'answer': answer,
+    'correctAnswerIndex': correctAnswerIndex,
   };
 }
+
 
 class Quiz {
   List<QuizQuestion> questions;

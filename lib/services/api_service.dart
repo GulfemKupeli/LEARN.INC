@@ -48,16 +48,16 @@ class ApiService {
               "parts": [
                 {
                   "text": """Generate multiple-choice questions with 4 options each from the following text. Include the correct answer for each question explicitly. Format each question as:
-
-**1. Question text?**
-a) First option
-b) Second option
-c) Third option
-d) Fourth option
-
-**Correct Answer: c**
-
-$text"""
+                  
+                  **1. Question text?**
+                  a) First option
+                  b) Second option
+                  c) Third option
+                  d) Fourth option
+                  
+                  **Correct Answer: c**
+                  
+                  $text"""
                 }
               ]
             }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:curved_navigation_bar/curved_navigation_bar.dart';
+import 'package:learn_inc/screens/homework_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:learn_inc/providers/user_provider.dart';
 import 'package:learn_inc/screens/flashy_screen.dart';
@@ -81,9 +82,9 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
       _pages = [
         MainPage(animation: _animation),
         FlashyScreen(isDayMode: true),
-        CoursesScreen(), // Öğrencilere özel
+        //CoursesScreen(), // Öğrencilere özel
         ChatScreen(isDayMode: isDayMode),
-        AssignmentsScreen(), // Öğrencilere özel
+        HomeworkScreen(isDayMode: isDayMode), // Öğrencilere özel
         QuizzesScreen(isDayMode: isDayMode),
       ];
       _icons = [

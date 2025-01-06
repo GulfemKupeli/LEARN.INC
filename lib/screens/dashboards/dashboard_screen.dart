@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:curved_navigation_bar/curved_navigation_bar.dart';
-import 'package:learn_inc/screens/homework_screen.dart';
 import 'package:provider/provider.dart';
-import 'package:learn_inc/providers/user_provider.dart';
+import 'package:learn_inc/screens/homework_screen.dart';
 import 'package:learn_inc/screens/flashy_screen.dart';
 import 'package:learn_inc/screens/chat_screen.dart';
 import 'package:learn_inc/screens/learn_screen.dart';
 import 'package:learn_inc/screens/quiz_screen.dart';
-
+import 'package:learn_inc/screens/pomodoro_screen.dart';
+import 'package:learn_inc/screens/leaderboard_screen.dart';
+import '../../providers/user_provider.dart';
 import '../../widgets/profile_modal.dart';
 import '../../widgets/top_bar.dart';
 import '../teacher_attributes/assignments_screen.dart';
@@ -18,7 +19,6 @@ class DashboardScreen extends StatefulWidget {
   const DashboardScreen({Key? key, required this.role}) : super(key: key);
   final String role;
 
-
   @override
   _DashboardScreenState createState() => _DashboardScreenState();
 }
@@ -28,7 +28,7 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
   AnimationController? _controller; // Nullable controller
   Animation<double>? _animation; // Nullable animation
   late List<Widget> _pages = [];
-  late List<Icon> _icons= [];
+  late List<Icon> _icons = [];
 
   @override
   void initState() {
@@ -51,20 +51,19 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
       _configureRoleBasedContent(userProvider.isDayMode);
     });
 
-
     _pages = [
       MainPage(animation: _animation), // Main page with octopus
-      FlashyScreen(isDayMode: true,),
-      ChatScreen(isDayMode: true,),
-      LearnScreen(isDayMode: true,),
-      QuizzesScreen(isDayMode: true,),
+      FlashyScreen(isDayMode: true),
+      ChatScreen(isDayMode: true),
+      LearnScreen(isDayMode: true),
+      QuizzesScreen(isDayMode: true),
     ];
   }
 
-  void _configureRoleBasedContent(bool isDayMode){
-    if(widget.role == 'teachers'){
+  void _configureRoleBasedContent(bool isDayMode) {
+    if (widget.role == 'teachers') {
       _pages = [
-        MainPage(animation: _animation,),
+        MainPage(animation: _animation),
         ManageClassesScreen(),
         ChatScreen(isDayMode: isDayMode),
         AssignmentsScreen(),
@@ -77,14 +76,12 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
         Icon(Icons.assignment, size: 30, color: isDayMode ? Colors.black : Colors.white),
         Icon(Icons.quiz, size: 30, color: isDayMode ? Colors.black : Colors.white),
       ];
-    }
-    else if(widget.role == 'students'){
+    } else if (widget.role == 'students') {
       _pages = [
         MainPage(animation: _animation),
         FlashyScreen(isDayMode: true),
-        //CoursesScreen(), // Öğrencilere özel
         ChatScreen(isDayMode: isDayMode),
-        HomeworkScreen(isDayMode: isDayMode), // Öğrencilere özel
+        HomeworkScreen(isDayMode: isDayMode),
         QuizzesScreen(isDayMode: isDayMode),
       ];
       _icons = [
@@ -94,7 +91,7 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
         Icon(Icons.assignment, size: 30, color: isDayMode ? Colors.black : Colors.white),
         Icon(Icons.quiz, size: 30, color: isDayMode ? Colors.black : Colors.white),
       ];
-    } else{
+    } else {
       _pages = [
         MainPage(animation: _animation),
         FlashyScreen(isDayMode: isDayMode),
@@ -111,6 +108,7 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
       ];
     }
   }
+
   @override
   void dispose() {
     _controller?.dispose(); // Dispose of the controller safely
@@ -144,6 +142,7 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
               lives: lives,
               isDayMode: isDayMode,
               onProfileTap: () {
+
                 showModalBottomSheet(
                   context: context,
                   isScrollControlled: true,
@@ -152,6 +151,7 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
                     profileImage: user?.profileImage ?? 'assets/avatars/avatar1.png',
                     isDayMode: isDayMode,
                     onNavigateToSettings: () {
+                      Navigator.pop(context); // Close the modal first
                       Navigator.pushNamed(context, '/settings');
                     },
                     role: user?.role ?? 'member',
@@ -248,6 +248,36 @@ class MainPage extends StatelessWidget {
                   color: isDayMode ? Colors.black54 : Colors.grey[400],
                 ),
               ),
+
+              const SizedBox(height: 30),
+
+              // Buttons below the text
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  FloatingActionButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => LeaderboardScreen()),
+                      );
+                    },
+                    backgroundColor: const Color(0xFF4DD0E1),
+                    child: const Icon(Icons.emoji_events),
+                  ),
+                  const SizedBox(width: 20),
+                  FloatingActionButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => PomodoroScreen()),
+                      );
+                    },
+                    backgroundColor: const Color(0xFF4DD0E1),
+                    child: const Icon(Icons.timer),
+                  ),
+                ],
+              ),
             ],
           ),
         ),
@@ -255,3 +285,5 @@ class MainPage extends StatelessWidget {
     );
   }
 }
+
+

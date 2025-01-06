@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 // Buraya kendi Google Generative Language (PaLM) API anahtarınızı koyun:
-final String apiKey = 'AIzaSyC5gpQ5AHZDwHoJNOigtVDrRh3qgkh45RU';
+final String apiKey = 'YOUR API KEY';
 
 // gemini-1.5-flash-latest yerine text-bison-001 gibi başka bir model kullanıyorsanız,
 // endpoint ve model adını güncelleyin:
